@@ -1,8 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError.js"
+import { ApiError } from "../utils/ApiErrors.js"
 import {User} from "../models/user.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
-import { ApiResponse } from "../ustils/ApiResponse.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 
 const registerUser = asyncHandler(async (req,res) => {
     // res.status(200).json({
@@ -25,11 +25,11 @@ const registerUser = asyncHandler(async (req,res) => {
     //     throw new ApiError(400, "fullname is required")
     // }
 
-    const trimmedEmail = email?.trim();
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(trimmedEmail)) {
-        return next(new ApiError(400, "Invalid email format. Example: example@gmail.com"));
-    }
+    // const trimmedEmail = email?.trim();
+    // const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    // if (!emailRegex.test(trimmedEmail)) {
+    //     return next(new ApiError(400, "Invalid email format. Example: example@gmail.com"));
+    // }
     if (
         [fullname,username,password,email].some((field)=>
         field?.trim()==="")
@@ -37,7 +37,7 @@ const registerUser = asyncHandler(async (req,res) => {
         throw new ApiError(400, "all fields are required")
     }
 
-    const existingUser = User.findOne({
+    const existingUser = await User.findOne({
         $or: [{username}, {email}]
     })
     if (existingUser) {
@@ -45,8 +45,13 @@ const registerUser = asyncHandler(async (req,res) => {
     }
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+    
     if (!avatarLocalPath) {
         throw new ApiError(400,"avatar file is required")
     }
